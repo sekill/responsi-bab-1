@@ -1,0 +1,154 @@
+import 'dart:async';
+
+// Kelas Produk untuk mewakili produk
+class Produk {
+  String namaProduk;
+  double harga;
+  bool tersedia;
+
+  Produk(
+      {required this.namaProduk, required this.harga, required this.tersedia});
+
+  @override
+  String toString() {
+    return 'Produk: $namaProduk, Harga: \$${harga.toStringAsFixed(2)}, Tersedia: $tersedia';
+  }
+}
+
+// Enum Peran untuk mendefinisikan peran pengguna
+enum Peran {
+  Admin,
+  Pelanggan,
+}
+
+// Kelas Pengguna sebagai kelas dasar
+class Pengguna {
+  String nama;
+  int usia;
+  late List<Produk>
+      produk; // Menggunakan 'late' untuk inisialisasi setelah objek dibuat
+  Peran? peran; // Nullable, karena belum tentu ada peran saat objek dibuat
+
+  Pengguna({required this.nama, required this.usia, this.peran});
+
+  void lihatProduk() {
+    if (produk.isEmpty) {
+      print('Tidak ada produk tersedia.');
+    } else {
+      produk.forEach((produk) {
+        print(produk);
+      });
+    }
+  }
+}
+
+// Subkelas PenggunaAdmin untuk pengguna admin
+class PenggunaAdmin extends Pengguna {
+  PenggunaAdmin(
+      {required String nama, required int usia, Peran peran = Peran.Admin})
+      : super(nama: nama, usia: usia, peran: peran);
+
+  // Fungsi untuk menambah produk
+  void tambahProduk(Produk produkBaru) {
+    try {
+      if (produkBaru.tersedia) {
+        // Memeriksa apakah produk sudah ada dalam daftar produk
+        if (produk.any((p) => p.namaProduk == produkBaru.namaProduk)) {
+          print('Produk sudah ada dalam daftar.');
+        } else {
+          produk.add(produkBaru);
+          print('Produk ditambahkan: ${produkBaru.namaProduk}');
+        }
+      } else {
+        print(
+            'Tidak bisa menambah produk ${produkBaru.namaProduk} karena stok habis.');
+      }
+    } catch (e) {
+      print('Terjadi kesalahan saat menambah produk: $e');
+    }
+  }
+
+  // Fungsi untuk menghapus produk
+  void hapusProduk(String namaProduk) {
+    // Mencari produk dalam daftar dengan cara yang aman
+    Produk? produkHapus;
+    for (var produkItem in produk) {
+      if (produkItem.namaProduk == namaProduk) {
+        produkHapus = produkItem;
+        break;
+      }
+    }
+
+    if (produkHapus != null) {
+      produk.remove(produkHapus);
+      print('Produk dihapus: ${produkHapus.namaProduk}');
+    } else {
+      print('Produk tidak ditemukan.');
+    }
+  }
+}
+
+// Subkelas PenggunaPelanggan untuk pengguna pelanggan
+class PenggunaPelanggan extends Pengguna {
+  PenggunaPelanggan(
+      {required String nama, required int usia, Peran peran = Peran.Pelanggan})
+      : super(nama: nama, usia: usia, peran: peran);
+}
+
+// Fungsi asinkron untuk mengambil detail produk dari server
+Future<Produk> ambilDetailProduk(String namaProduk) async {
+  await Future.delayed(
+      Duration(seconds: 2)); // Penundaan untuk simulasi pengambilan data
+  // Mengembalikan produk dengan data yang diminta
+  return Produk(namaProduk: namaProduk, harga: 100.0, tersedia: true);
+}
+
+// Fungsi utama untuk menjalankan program
+void main() async {
+  // Membuat objek pengguna Admin dan Pelanggan
+  PenggunaAdmin admin = PenggunaAdmin(nama: 'Admin Pengguna', usia: 35);
+  PenggunaPelanggan pelanggan =
+      PenggunaPelanggan(nama: 'Pelanggan Pengguna', usia: 28);
+
+  // Inisialisasi produk
+  admin.produk = [];
+  pelanggan.produk = [];
+
+  // Menggunakan Map untuk daftar produk unik
+  Map<String, Produk> katalogProduk = {};
+
+  // Menambahkan produk ke katalog
+  var produk1 = await ambilDetailProduk('Laptop');
+  var produk2 = await ambilDetailProduk('Smartphone');
+  var produk3 = await ambilDetailProduk('Smartwatch');
+
+  // Menambahkan produk ke Map untuk memastikan keunikan produk
+  katalogProduk[produk1.namaProduk] = produk1;
+  katalogProduk[produk2.namaProduk] = produk2;
+  katalogProduk[produk3.namaProduk] = produk3;
+
+  // Menampilkan katalog produk
+  print('Katalog Produk:');
+  katalogProduk.forEach((key, produk) {
+    print(produk);
+  });
+
+  // Admin menambah produk ke daftar produk mereka
+  admin.tambahProduk(produk1); // Produk pertama
+  admin.tambahProduk(produk2); // Produk kedua
+  admin.tambahProduk(produk3); // Produk ketiga
+
+  // Admin mencoba menambahkan produk yang sudah ada
+  admin.tambahProduk(produk1);
+
+  // Pelanggan hanya bisa melihat produk
+  print('\nTampilan Produk Pelanggan:');
+  pelanggan.lihatProduk();
+
+  // Admin menghapus produk dari daftar produk
+  admin.hapusProduk('Smartphone');
+
+  // Menampilkan produk setelah dihapus
+  print('\nProduk Admin setelah Dihapus:');
+  admin.lihatProduk();
+}
